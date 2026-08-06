@@ -29,6 +29,9 @@ from google.adk.tools.mcp_tool import McpToolset
 from google.adk.tools.mcp_tool.mcp_toolset import StdioServerParameters
 from google.genai import types
 
+# Model Armor safety callbacks (Step 9 — MODEL_ARMOR_SETUP.md)
+from app.security.model_armor_guard import screen_input, screen_output
+
 # Setup Google Cloud project configuration with safe fallback for local tests
 try:
     _, project_id = google.auth.default()
@@ -87,6 +90,11 @@ Strict Guidelines:
 """,
     tools=[bigquery_toolset, web_search_toolset],
     # planner=react_planner,
+    # Model Armor: screen every prompt before it hits Gemini, and every
+    # response before it is returned to the user. Controlled via
+    # MODEL_ARMOR_TEMPLATE and MODEL_ARMOR_FAIL_OPEN env vars (see app/.env).
+    before_model_callback=screen_input,
+    after_model_callback=screen_output,
 )
 
 # Create the ADK App
