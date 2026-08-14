@@ -21,16 +21,19 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 import google.auth
+from google.auth.transport.requests import Request
 from google.adk.agents import Agent
 from google.adk.apps import App
 from google.adk.models import Gemini
 from google.adk.planners import PlanReActPlanner
 from google.adk.tools.mcp_tool import McpToolset
 from google.adk.tools.mcp_tool.mcp_toolset import StdioServerParameters
+from google.adk.tools.mcp_tool.mcp_toolset import SseConnectionParams
 from google.genai import types
 
 # Model Armor safety callbacks (Step 9 — MODEL_ARMOR_SETUP.md)
 from app.security.model_armor_guard import screen_input, screen_output
+
 
 # Setup Google Cloud project configuration with safe fallback for local tests
 try:
@@ -50,10 +53,31 @@ bigquery_stub_path = os.path.join(mcp_servers_dir, "bigquery_mcp.py")
 web_search_stub_path = os.path.join(mcp_servers_dir, "web_search_mcp.py")
 
 # Configure MCP Server Toolsets
+# bigquery_toolset = McpToolset(
+#     connection_params=StdioServerParameters(
+#         command=sys.executable,
+#         args=[bigquery_stub_path],
+#     ),
+#     tool_name_prefix="bigquery_"
+# )
+
+# Fetch Identity Token for Service-to-Service auth to Cloud Run
+cloud_run_url = "https://bq-mcp-server-905882810521.us-east1.run.app"
+try:
+    credentials, auth_project_id = google.auth.default()
+    request = Request()
+    id_token_credentials = google.auth.default_identity_token(audience=cloud_run_url, request=request)
+    id_token = id_token_credentials.token
+except Exception as e:
+    print(f"Warning: Failed to fetch Identity Token. Proceeding without auth headers: {e}")
+    id_token = None
+
+headers = {"Authorization": f"Bearer {id_token}"} if id_token else None
+
 bigquery_toolset = McpToolset(
-    connection_params=StdioServerParameters(
-        command=sys.executable,
-        args=[bigquery_stub_path],
+    connection_params=SseConnectionParams(
+        url=f"{cloud_run_url}/sse",
+        headers=headers
     ),
     tool_name_prefix="bigquery_"
 )
