@@ -1,0 +1,32 @@
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environment — never copy into image
+.venv/
+
+# Local secrets — injected as Cloud Run env vars / Secret Manager at runtime
+app/.env
+
+# Git
+.git/
+.gitignore
+
+# Dev tools
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+tests/
+
+# IDE
+.vscode/
+.idea/
+
+# Local ADK config
+.adk/
