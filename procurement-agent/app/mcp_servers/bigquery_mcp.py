@@ -93,5 +93,30 @@ def get_table_schema(table_name: str) -> str:
     }
     return json.dumps(schemas.get(table_name.lower(), f"Error: Table {table_name} not found."), indent=2)
 
+import os
+
+def _start_server():
+    """Start the MCP server in SSE (HTTP) mode. Works whether run directly or via -m."""
+    port = int(os.environ.get("PORT", 8080))
+    mcp.settings.host = "0.0.0.0"
+    mcp.settings.port = port
+    mcp.run(transport="sse")
+
+#for local server
+# if __name__ == "__main__":
+#     _start_server()
+
+#for cloud run server
 if __name__ == "__main__":
-    mcp.run()
+        import os
+        # Cloud Run injects the PORT environment variable automatically
+        port = int(os.environ.get("PORT", 8080))
+        
+        mcp.settings.host = "0.0.0.0"
+        mcp.settings.port = port
+        
+        # NEW: Disable local-only Host header checks so Cloud Run traffic is accepted
+        mcp.settings.transport_security = None
+        
+        # Start the server in Server-Sent Events (HTTP) mode
+        mcp.run(transport="sse")
